@@ -1,23 +1,39 @@
-# Intentionally vulnerable Dockerfile for testing Trivy / Grype
-FROM ubuntu:18.04
+FROM golang:1.20-alpine AS builder
 
-LABEL maintainer="security-lab@example.com"
-LABEL purpose="Intentional Vulnerability Test Image"
+# Set necessary environmet variables needed for our image
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Move to working directory /app
+WORKDIR /app
 
-# Install old, known-vulnerable packages
-RUN apt-get update && \
-    apt-get install -y \
-        python2.7 \
-        openssl \
-        curl \
-        wget \
-        vim && \
-    rm -rf /var/lib/apt/lists/*
+# Copy and download dependency using go mod
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
 
-# Add a simple app
-COPY app.sh /usr/local/bin/app.sh
-RUN chmod +x /usr/local/bin/app.sh
+# Copy the code into the container
+COPY . .
 
-CMD ["/usr/local/bin/app.sh"]
+# Build the application
+RUN go version
+RUN go build -o main .
+
+# Move to /dist directory as the place for resulting binary folder
+WORKDIR /dist
+
+# Copy binary from build to main folder
+RUN cp /app/main .
+
+# Build a small image
+FROM scratch
+
+COPY --from=builder /dist/main /
+COPY ./config/config.json /config/config.json
+COPY ./templates/* /templates/
+COPY ./public/. /public/
+EXPOSE 8888
+# Command to run
+CMD ["./main"]
