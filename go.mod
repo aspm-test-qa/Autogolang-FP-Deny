@@ -1,6 +1,6 @@
 module github.com/aspm-test-qa/VulnerableGoRepo4GH
 
-go 1.15
+go 1.23
 
 require (
 	github.com/gin-gonic/gin v1.6.3 // indirect
