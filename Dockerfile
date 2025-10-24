@@ -1,39 +1,21 @@
-FROM golang:1.20-alpine AS builder
+# Intentionally vulnerable image for security scanner testing
+FROM python:3.6-slim
 
-# Set necessary environmet variables needed for our image
-ENV GO111MODULE=on \
-    CGO_ENABLED=0 \
-    GOOS=linux \
-    GOARCH=amd64
+LABEL maintainer="security-lab@example.com"
+LABEL purpose="Trivy & Grype Vulnerability Testing"
 
-# Move to working directory /app
-WORKDIR /app
+# Install outdated/vulnerable packages
+RUN apt-get update && \
+    apt-get install -y \
+        openssl \
+        curl \
+        wget \
+        vim && \
+    pip install --no-cache-dir flask==1.0.2 requests==2.18.4 && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy and download dependency using go mod
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
+# Add simple app
+COPY app.py /usr/src/app/app.py
+WORKDIR /usr/src/app
 
-# Copy the code into the container
-COPY . .
-
-# Build the application
-RUN go version
-RUN go build -o main .
-
-# Move to /dist directory as the place for resulting binary folder
-WORKDIR /dist
-
-# Copy binary from build to main folder
-RUN cp /app/main .
-
-# Build a small image
-FROM scratch
-
-COPY --from=builder /dist/main /
-COPY ./config/config.json /config/config.json
-COPY ./templates/* /templates/
-COPY ./public/. /public/
-EXPOSE 8888
-# Command to run
-CMD ["./main"]
+CMD ["python", "app.py"]
