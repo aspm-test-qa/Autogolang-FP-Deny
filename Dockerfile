@@ -4,21 +4,20 @@ FROM debian:stretch
 LABEL maintainer="security-lab@example.com"
 LABEL purpose="Intentional Vulnerability Test Image"
 
-# Non-interactive mode for apt
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install outdated, known-vulnerable packages
-RUN apt-get update && \
+# Use archived Debian Stretch sources (EOL, but still downloadable)
+RUN sed -i 's|deb.debian.org|archive.debian.org|g' /etc/apt/sources.list && \
+    sed -i 's|security.debian.org|archive.debian.org|g' /etc/apt/sources.list && \
+    echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid && \
+    apt-get update && \
     apt-get install -y \
-        openssl=1.1.0l-1~deb9u6 \
-        libssl1.1 \
+        openssl \
         python2.7 \
         curl \
         wget \
         vim && \
     rm -rf /var/lib/apt/lists/*
 
-# Add a dummy app script
+# Add a dummy script
 COPY app.sh /usr/local/bin/app.sh
 RUN chmod +x /usr/local/bin/app.sh
 
