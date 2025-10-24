@@ -3,6 +3,7 @@ version: "3.8"
 services:
   vulnerable-app:
     build: .
-    container_name: vulnerable_app
     image: vulnerable_app:latest
-    restart: unless-stopped
+    ports:
+      - "8080:8080"
+
