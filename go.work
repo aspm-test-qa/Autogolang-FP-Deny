@@ -1,7 +1,5 @@
 go 1.15
 
-toolchain go 1.15
-
 use (
 	.
 	./aiplatform
